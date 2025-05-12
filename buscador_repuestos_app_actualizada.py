@@ -37,7 +37,7 @@ if busqueda:
             st.write(f"**traduccion:** {row['traduccion']}")
         if "analizador" in row:
             st.write(f"**analizador:** {row['analizador']}")
-        if pd.notna(row.get("IMAGEN CONVERTIDA", None)):
-            st.image(row["IMAGEN CONVERTIDA"], width=300)
+        if pd.notna(row.get("IMAGEN", None)):
+            st.image(row["IMAGEN"], width=300)
 else:
     st.info("Escribe un término para iniciar la búsqueda.")
