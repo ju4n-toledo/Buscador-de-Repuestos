@@ -35,6 +35,9 @@ if busqueda:
         st.write(f"**Ubicación:** {row['UBICACION']}")
         st.write(f"**Casa Comercial:** {row['CASA COMERCIAL']}")
         st.write(f"**Cantidad Disponible:** {row['CANTIDAD']}")
+        st.write(f"**traduccion:** {row['TRADUCCION']}")
+        st.write(f"**analizador:** {row['ANALIZADOR']}")
+        
 
         # Mostrar imagen si está disponible
         if pd.notna(row["IMAGEN"]):
