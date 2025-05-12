@@ -1,43 +1,67 @@
-
 import streamlit as st
 import pandas as pd
+import requests
+from PIL import Image
+from io import BytesIO
 
+# Configuración de la página
 st.set_page_config(page_title="Buscador de Repuestos", layout="wide")
 
-st.title("🔍 Buscador de Repuestos")
-st.markdown("Busca un repuesto por nombre, referencia o ubicación.")
-
+# Cargar datos
 @st.cache_data
-def cargar_datos():
-    return pd.read_excel("BUSCADOR_REPUESTOS_CONVERTIDO.xlsx", sheet_name="INVENTARIO")
+def load_data():
+    df = pd.read_excel("data/BUSCADOR REPUESTOS.xlsx", sheet_name="INVENTARIO")
+    # Limpiar nombres de columnas (eliminar espacios y mayúsculas)
+    df.columns = [col.strip().upper() for col in df.columns]
+    return df
 
-df = cargar_datos()
+df = load_data()
 
-df["DESCRIPCION"] = df["DESCRIPCION"].astype(str)
-df["REFERENCIA"] = df["REFERENCIA"].astype(str)
-df["UBICACION"] = df["UBICACION"].astype(str)
+# Título y búsqueda
+st.title("🔍 Buscador de Repuestos - Inventario")
+search_term = st.text_input("Buscar por Referencia, Descripción o Ubicación:")
 
-busqueda = st.text_input("🔎 Escribe parte del nombre, referencia o ubicación:").strip().lower()
-
-if busqueda:
-    resultados = df[
-        df["DESCRIPCION"].str.lower().str.contains(busqueda) |
-        df["REFERENCIA"].str.lower().str.contains(busqueda) |
-        df["UBICACION"].str.lower().str.contains(busqueda)
+# Filtrado de datos
+if search_term:
+    filtered_df = df[
+        df.apply(
+            lambda row: any(
+                str(search_term).lower() in str(row[col]).lower() 
+                for col in ["REFERENCIA", "DESCRIPCION", "UBICACION"]
+            ),
+            axis=1
+        )
     ]
-    st.write(f"🔧 {len(resultados)} repuestos encontrados:")
-    for _, row in resultados.iterrows():
-        st.markdown("---")
-        st.subheader(f"🔩 {row['DESCRIPCION']}")
-        st.write(f"**Referencia:** {row['REFERENCIA']}")
-        st.write(f"**Ubicación:** {row['UBICACION']}")
-        st.write(f"**Casa Comercial:** {row['CASA COMERCIAL']}")
-        st.write(f"**Cantidad Disponible:** {row['CANTIDAD']}")
-        if "traduccion" in row:
-            st.write(f"**traduccion:** {row['traduccion']}")
-        if "analizador" in row:
-            st.write(f"**analizador:** {row['analizador']}")
-        if pd.notna(row.get("IMAGEN", None)):
-            st.image(row["IMAGEN"], width=300)
 else:
-    st.info("Escribe un término para iniciar la búsqueda.")
+    filtered_df = df
+
+# Mostrar resultados
+if not filtered_df.empty:
+    st.write(f"**Resultados encontrados:** {len(filtered_df)}")
+    for _, row in filtered_df.iterrows():
+        st.divider()
+        col1, col2 = st.columns([1, 3])
+
+        # Columna 1: Imagen (si existe)
+        with col1:
+            if pd.notna(row["IMAGEN"]) and str(row["IMAGEN"]).startswith("http"):
+                try:
+                    response = requests.get(row["IMAGEN"])
+                    img = Image.open(BytesIO(response.content))
+                    st.image(img, width=200, caption=row["REFERENCIA"])
+                except:
+                    st.warning("Error al cargar la imagen")
+            else:
+                st.warning("Imagen no disponible")
+
+        # Columna 2: Datos del repuesto
+        with col2:
+            st.subheader(f"{row['REFERENCIA']} - {row['DESCRIPCION']}")
+            st.write(f"**Casa Comercial:** {row['CASA COMERCIAL']}")
+            st.write(f"**Ubicación:** {row['UBICACION']}")
+            st.write(f"**Cantidad:** {row['CANTIDAD']}")
+            if pd.notna(row["TRADUCCION"]):
+                st.write(f"**Traducción:** {row['TRADUCCION']}")
+
+else:
+    st.error("No se encontraron repuestos. Intenta con otro término.")
