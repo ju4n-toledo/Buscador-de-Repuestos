@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 
@@ -9,11 +8,11 @@ st.markdown("Busca un repuesto por nombre, referencia o ubicación.")
 
 @st.cache_data
 def cargar_datos():
-    return pd.read_excel("BUSCADOR REPUESTOS.xlsx", sheet_name=" INVENTARIO")
+    return pd.read_excel("BUSCADOR_REPUESTOS_CONVERTIDO.xlsx", sheet_name="INVENTARIO")
 
 df = cargar_datos()
 
-# Convertir a texto para búsqueda
+# Preparar columnas para búsqueda
 df["DESCRIPCION"] = df["DESCRIPCION"].astype(str)
 df["REFERENCIA"] = df["REFERENCIA"].astype(str)
 df["UBICACION"] = df["UBICACION"].astype(str)
@@ -35,22 +34,14 @@ if busqueda:
         st.write(f"**Ubicación:** {row['UBICACION']}")
         st.write(f"**Casa Comercial:** {row['CASA COMERCIAL']}")
         st.write(f"**Cantidad Disponible:** {row['CANTIDAD']}")
-        st.write(f"**traduccion:** {row['TRADUCCION']}")
-        st.write(f"**analizador:** {row['ANALIZADOR']}")
-        
+        if "traduccion" in row:
+            st.write(f"**traduccion:** {row['traduccion']}")
+        if "analizador" in row:
+            st.write(f"**analizador:** {row['analizador']}")
 
         # Mostrar imagen si está disponible
-        if pd.notna(row["IMAGEN"]):
-            if "drive.google.com" in row["IMAGEN"]:
-                if "id=" in row["IMAGEN"]:
-                    file_id = row["IMAGEN"].split("id=")[-1]
-                elif "/d/" in row["IMAGEN"]:
-                    file_id = row["IMAGEN"].split("/d/")[-1].split("/")[0]
-                else:
-                    file_id = ""
-                url = f"https://drive.google.com/uc?id={file_id}"
-                st.image(url, width=300)
-            else:
-                st.image(row["IMAGEN"], width=300)
+        if pd.notna(row.get("IMAGEN CONVERTIDA", None)):
+            st.image(row["IMAGEN CONVERTIDA"], width=300)
 else:
     st.info("Escribe un término para iniciar la búsqueda.")
+
